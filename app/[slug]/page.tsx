@@ -3,12 +3,18 @@
 // Mobile-first. Drop into Next.js 14+ app router.
 
 import type { Metadata } from "next";
-import { getCard } from "@/lib/getCard";
+import { getCard, getAllSlugs } from "@/lib/getCard";
 import { notFound } from "next/navigation";
 import ZCardView from "@/components/ZCardView";
 
 interface Props {
   params: { slug: string };
+}
+
+// Pre-render all known cards at build time
+export async function generateStaticParams() {
+  const slugs = await getAllSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

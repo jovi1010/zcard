@@ -1,7 +1,8 @@
 # ZCard Master Template
-**TAP · zcard.ca · Built for Vercel + Supabase**
+**TAP · zcard.ca · Built for Vercel**
 
 Mobile-first digital business card platform. Each card lives at `zcard.ca/[slug]`.
+Cards are plain JSON files — no database, no backend, no env vars required.
 
 ---
 
@@ -9,90 +10,108 @@ Mobile-first digital business card platform. Each card lives at `zcard.ca/[slug]
 | Layer | Tool | Cost |
 |-------|------|------|
 | Hosting / routing | Vercel Pro | $20/mo |
-| Database | Supabase Free | $0 |
-| Edge sync (Manila) | Cloudflare Workers Paid | $5/mo |
+| Card storage | JSON files in `data/cards/` | $0 |
 | Forms / lead capture | Tally Free | $0 |
+| Edge sync (Manila, optional) | Cloudflare Workers Paid | $5/mo |
 
 ---
 
 ## File structure
 
 ```
+data/
+  cards/
+    william-saldanha.json   ← one file per card
+    [slug].json             ← add more cards here
+
 app/
-  layout.tsx          ← root layout, Google Fonts (DM Serif Display + Inter)
-  not-found.tsx       ← 404 for missing/inactive cards
+  layout.tsx                ← root layout, Google Fonts
+  not-found.tsx             ← 404 for missing/inactive cards
   [slug]/
-    page.tsx          ← server component: fetches card, renders ZCardView
+    page.tsx                ← server component: reads JSON, renders card
 
 components/
-  ZCardView.tsx       ← client component: full card UI
+  ZCardView.tsx             ← full card UI (client component)
 
 lib/
-  types.ts            ← ZCardProfile TypeScript schema
-  getCard.ts          ← Supabase data access (server-only)
-  vcard.ts            ← .vcf generator for Save Contact
-  demo.ts             ← sample card (William Saldanha)
+  types.ts                  ← ZCardProfile TypeScript schema
+  getCard.ts                ← reads card from data/cards/[slug].json
+  vcard.ts                  ← .vcf generator for Save Contact
+  demo.ts                   ← reference only
 
-supabase/
-  schema.sql          ← run once in Supabase SQL editor
-
-.env.local.example    ← copy to .env.local, fill in keys
+.env.local.example          ← optional Cloudflare vars only
 ```
-
----
-
-## Quick start
-
-1. **Clone / copy** this template into your Next.js 14+ project
-2. Run `schema.sql` in your Supabase SQL editor
-3. Copy `.env.local.example` → `.env.local` and fill in your keys
-4. Add to `package.json` dependencies if not present:
-   ```
-   @supabase/supabase-js
-   ```
-5. Deploy to Vercel — set env vars in Project → Settings → Environment Variables
 
 ---
 
 ## Adding a new card
 
-Insert a row into the `zcards` table in Supabase. Minimum fields:
+1. Copy `data/cards/william-saldanha.json`
+2. Rename to `data/cards/[new-slug].json`
+3. Edit the fields
+4. Commit and push — Vercel auto-deploys
+5. Card is live at `zcard.ca/[new-slug]`
+
+That's it. No database, no dashboard, no migrations.
+
+---
+
+## Card JSON structure
 
 ```json
 {
   "slug": "first-last",
   "name": "Full Name",
-  "tier": "core",
-  "active": true,
+  "title": "Job Title",
+  "company": "Company Name",
+  "tagline": "One line that makes people want to connect.",
+  "avatar": "https://...",
+  "cover": "https://...",
   "actions": [
-    { "type": "call",  "label": "Call",  "value": "+1..." },
-    { "type": "email", "label": "Email", "value": "name@..." }
-  ]
+    { "type": "call",     "label": "Call",     "value": "+1..." },
+    { "type": "email",    "label": "Email",    "value": "name@..." },
+    { "type": "whatsapp", "label": "WhatsApp", "value": "+1..." },
+    { "type": "url",      "label": "Website",  "value": "https://..." }
+  ],
+  "socials": [
+    { "platform": "linkedin", "url": "https://linkedin.com/in/..." }
+  ],
+  "bio": "Optional about text.",
+  "tallyFormId": "",
+  "tier": "core",
+  "accentColor": "#C9A84C",
+  "darkMode": true,
+  "active": true,
+  "createdAt": "2026-06-01T00:00:00Z",
+  "updatedAt": "2026-06-01T00:00:00Z"
 }
 ```
 
-Card is instantly live at `zcard.ca/first-last`.
+### Action types
+| type | opens |
+|------|-------|
+| `call` | Phone dialer |
+| `whatsapp` | WhatsApp chat |
+| `email` | Email client |
+| `sms` | SMS |
+| `url` | Browser |
+| `map` | Google Maps |
+| `tally` | Tally form |
 
----
-
-## Tiers
-
+### Tiers
 | Feature | Core | Pro | Premium |
 |---------|------|-----|---------|
 | Actions | 2 | 4 | Unlimited |
 | Tally form embed | — | ✓ | ✓ |
 | Custom accent color | — | — | ✓ |
-| Custom subdomain ([name].zcard.ca) | — | — | ✓ |
-| Analytics | — | Basic | Full |
+| Custom subdomain | — | — | ✓ |
 
 ---
 
 ## Domain routing (Vercel)
-- `zcard.ca/[slug]` — all client cards (wildcard catch-all)
+- `zcard.ca/[slug]` — all client cards
 - `tap.zcard.ca` — TAP marketing site
-- `[name].zcard.ca` — Premium custom subdomains via wildcard DNS on Vercel
-
-No Hostinger involvement. All routing through Vercel.
+- `[name].zcard.ca` — Premium custom subdomains (wildcard DNS)
 
 ---
 

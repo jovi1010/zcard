@@ -1,23 +1,32 @@
 // lib/getCard.ts — data access layer
-// Fetches ZCardProfile from Supabase by slug.
-// Server-side only (Next.js server component / generateMetadata).
+// Reads ZCardProfile from a JSON file at data/cards/[slug].json
+// No database required. Add a card by dropping a JSON file in data/cards/.
 
-import { createClient } from "@supabase/supabase-js";
+import fs from "fs";
+import path from "path";
 import type { ZCardProfile } from "./types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const CARDS_DIR = path.join(process.cwd(), "data", "cards");
 
 export async function getCard(slug: string): Promise<ZCardProfile | null> {
-  const { data, error } = await supabase
-    .from("zcards")
-    .select("*")
-    .eq("slug", slug)
-    .eq("active", true)
-    .single();
+  try {
+    const filePath = path.join(CARDS_DIR, `${slug}.json`);
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const card = JSON.parse(raw) as ZCardProfile;
+    if (!card.active) return null;
+    return card;
+  } catch {
+    return null;
+  }
+}
 
-  if (error || !data) return null;
-  return data as ZCardProfile;
+export async function getAllSlugs(): Promise<string[]> {
+  try {
+    return fs
+      .readdirSync(CARDS_DIR)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.replace(".json", ""));
+  } catch {
+    return [];
+  }
 }
